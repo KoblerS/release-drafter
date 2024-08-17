@@ -1,0 +1,51 @@
+name: Move main version tag
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  tag-main-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: ${{ github.workflow }}-${{ github.ref_name }}
+    outputs:
+      version: ${{ steps.get-main-version.outputs.version }}
+    steps:
+      - name: Get main version tag
+        id: get-main-version
+        run: |
+          MAIN_VERSION=$(echo '${{ github.ref_name }}' | sed -E 's/(v[0-9]+).*/\1/')
+          echo ::debug::Main version is $MAIN_VERSION
+          echo "version=$MAIN_VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+
+      - name: Ensure higher version
+        id: get-highest-version
+        run: |
+          git fetch --tags --force
+          HIGHEST_VERSION=$(git tag --list '${{ steps.get-main-version.outputs.version }}.*' --sort=-v:refname | head -n 1)
+          echo "version=$HIGHEST_VERSION" >> "$GITHUB_OUTPUT"
+          echo ::debug::Currently highest version is "$HIGHEST_VERSION"
+
+      - name: Fail if ${{ github.ref_name }} is not the latest version for ${{ steps.get-main-version.outputs.version }}
+        if: ${{ steps.get-highest-version.outputs.version > github.ref_name }}
+        uses: actions/github-script@v7
+        with:
+          script: core.setFailed('Not moving main version tag ${{ steps.get-main-version.outputs.version }}, because ${{ github.ref_name }} is lower than the currently highest version ${{ steps.get-highest-version.outputs.version }}')
+
+      - name: Git config
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+      - name: Move main version tag ${{ steps.get-main-version.outputs.version }} to ${{ github.ref_name }}
+        env:
+          MAIN_VERSION: ${{ steps.get-main-version.outputs.version }}
+        run: |
+          git tag --force $MAIN_VERSION ${{ github.ref }}
+          git push origin $MAIN_VERSION --force
+
+          echo "Moved main version tag $MAIN_VERSION to ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

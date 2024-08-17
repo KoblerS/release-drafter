@@ -1,0 +1,25 @@
+name: GitHub Action release drafter
+description: Automate versioning and create GitHub releases based on commit messages
+branding:
+  icon: archive
+  color: purple
+inputs:
+  token:
+    description: Token with repository access, provided as a secret.
+    default: ${{ github.token }}
+  generate-release-notes:
+    description: Automatically generate release notes
+    default: "true"
+  version-prefix:
+    description: Tag prefix for the version
+    default: "v"
+outputs:
+  release-id:
+    description: Internal GitHub ID of the created release
+  version:
+    description: Version number of the created release
+  raw-version:
+    description: Raw version number of the created release
+runs:
+  using: node20
+  main: dist/index.js
