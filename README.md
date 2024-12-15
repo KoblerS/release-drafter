@@ -1,4 +1,4 @@
-# 📦🚀 GitHub release drafter
+# 📦🚀 GitHub Action release drafter
 
 [![Build and Test](https://github.com/KoblerS/release-drafter/actions/workflows/publish.yml/badge.svg)](https://github.com/KoblerS/release-drafter/actions/workflows/publish.yml)
 
